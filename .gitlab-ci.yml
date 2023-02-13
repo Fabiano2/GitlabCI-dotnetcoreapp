@@ -1,0 +1,140 @@
+#variables:
+#  GIT_STRATEGY: none
+before_script:
+  - rm ./.git -rf
+stages:
+  #- code_analysis
+  - build
+  - deploy_dev
+  - aprovacao_manual
+  - deploy_prod
+
+#sonar:
+#  image: mcr.microsoft.com/dotnet/core/sdk:latest
+#  stage: code_analysis
+#  tags:
+#    - tag-dockerbrad02-docker
+#   
+#  variables:
+#    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+#    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+#  cache:
+#    key: "${CI_JOB_NAME}"
+#    paths:
+#      - .sonar/cache
+#  script:
+#      - whoami
+#      - pwd 
+#      - "apt-get update"
+#      - "apt-get install --yes openjdk-11-jre"
+#      - "dotnet tool install --global dotnet-sonarscanner"
+#      - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
+#      - "dotnet sonarscanner begin /k:\"dotnetcoreapp\" /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" "
+#      - "dotnet build"
+#      - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
+#  allow_failure: false
+#  only:
+#    - main
+
+
+build:
+  stage: build
+  tags:
+    - esteiradev2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success    
+  script:
+    - docker build -t aspnetcoreapp .
+    - echo $GITLAB_USER_LOGIN
+
+deploy_dev:
+  stage: deploy_dev
+  tags:
+    - esteiradev2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success 
+  script:
+    - dns="devopsdev.7comm.com.br" ambiente="dev" docker-compose up -d devopsdev
+  allow_failure: false
+  needs:
+    - build
+
+aprovacao_manual:
+  # this job must be run manually to allow cleanup stage to run
+  stage: aprovacao_manual
+  tags:
+    - esteiradev2
+
+  when: manual
+  script:
+    - echo noop
+    - echo $GITLAB_USER_LOGIN
+    - sudo su
+    - |
+      ID=$CI_PIPELINE_ID
+      userlogin=$GITLAB_USER_LOGIN
+      token=$usergitpassword
+      workDir="/tmp/testegitlab$ID"
+
+      if [ ! -d "$workDir" ]; then
+        mkdir $workDir
+      fi
+      
+      cd $workDir
+
+      GIT_SSL_NO_VERIFY=1 git clone https://fabiano.pereira:$token@gitlab.7comm.com.br/Governanca/devops/teste_approvers.git
+      #approvers=$( cat teste_approvers/approvers.txt )
+      mapfile -t aprovadores < teste_approvers/approvers.txt
+      rm $workDir -r
+      aprovador=false
+
+      qtde=${#aprovadores[@]}
+      
+      echo $qtde
+      
+      i=0
+      while [[ $i -lt $qtde ]]
+      do
+      
+        if [[ "$userlogin" == "${aprovadores[$i]}" ]]; then
+          aprovador=true
+        fi
+      
+      i=$i+1
+      done
+      
+      if [[ $aprovador == true ]]; then
+        echo "é um aprovador! Seguindo.."
+      else
+        echo "não é um aprovador Impossível prosseguir"
+        echo "qtde = $qtde"
+        echo "aprovadore = $"
+        exit 1
+      fi
+      
+      
+      
+
+    #- |
+    #  if [[ "$approvers" != "$userlogin" ]]; 
+    #  then 
+    #    echo "Usuário não faz parte do grupo de aprovadores!"
+    #    exit 1 
+    #  fi
+    #- echo $approvers
+  allow_failure: false
+
+deploy_prod:
+  stage: deploy_prod
+  tags:
+    - esteiradev2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success 
+  script:
+    - dns="devopsprod.7comm.com.br" ambiente="prod" docker-compose up --remove-orphans -d devopsprod2
+  allow_failure: false
+  needs:
+    - aprovacao_manual

@@ -1,0 +1,43 @@
+version: "3"
+
+networks:
+  proxy:
+    external: true
+
+services:
+  devopsdev:
+    image: aspnetcoreapp:latest
+    container_name: devops${ambiente}
+    #volumes:
+    #  - "/home/Fabiano/dotnet/devops/app:/app"
+    networks:
+      - proxy
+    restart: unless-stopped
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.devops${ambiente}-secure.entrypoints=websecure"
+      - "traefik.http.routers.devops${ambiente}-secure.rule=Host(`${dns}`)"
+      - "traefik.http.routers.devops${ambiente}-secure.service=devops${ambiente}"
+      - "traefik.http.routers.devops${ambiente}-secure.tls=true"
+      - "traefik.http.services.devops${ambiente}.loadbalancer.server.port=80"
+
+  devopsprod2:
+    image: aspnetcoreapp:latest
+    container_name: devops${ambiente}
+    #volumes:
+    #  - "/home/Fabiano/dotnet/devops/app:/app"
+    networks:
+      - proxy
+    restart: unless-stopped
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.devops${ambiente}-secure.entrypoints=websecure"
+      - "traefik.http.routers.devops${ambiente}-secure.rule=Host(`${dns}`)"
+      - "traefik.http.routers.devops${ambiente}-secure.service=devops${ambiente}"
+      - "traefik.http.routers.devops${ambiente}-secure.tls=true"
+      - "traefik.http.services.devops${ambiente}.loadbalancer.server.port=80"
+
