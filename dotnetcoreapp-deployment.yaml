@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnetcoreapp
+  labels:
+    app: dotnetcoreapp
+
+spec:
+  template:
+    metadata:
+      name: dotnetcoreapp
+      labels:
+        app: dotnetcoreapp
+    spec:
+      containers:
+        - name: dotnetcoreapp
+          image: fabiano341/dotnetcoreapp:2.0
+
+  selector:
+    matchLabels:
+      app: dotnetcoreapp
+      #strategy:
+      #type: Recreate
+
+  replicas: 5
