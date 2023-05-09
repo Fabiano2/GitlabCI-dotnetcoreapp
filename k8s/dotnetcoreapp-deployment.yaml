@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: dotnetcoreapp
-          image: fabiano341/dotnetcoreapp:latest
+          image: fabiano341/dotnetcoreapp:3.0
 
   selector:
     matchLabels:
