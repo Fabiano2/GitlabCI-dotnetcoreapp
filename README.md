@@ -10,7 +10,11 @@
 
 3- Faça o Build da imagem docker:
 
-`docker build -t aspnetcoreapp .`
+`docker build -t fabiano341/aspnetcoreapp:latest .`
+
+4- Faça o push da imagem para o dockerhub (OPCIONAL).
+
+`docker push fabiano341/aspnetcoreapp:latest`
 
 3- execute o docker-compose.yml para subir o container:
 
