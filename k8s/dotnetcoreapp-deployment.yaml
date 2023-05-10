@@ -22,4 +22,4 @@ spec:
       #strategy:
       #type: Recreate
 
-  replicas: 2
+  replicas: 1
